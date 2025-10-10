@@ -1,115 +1,166 @@
-import { matrix, multiply, inv, add, subtract, abs } from "mathjs";
+export const regressionUtils = {
+    calcularR2: (datos, prediccionFn) => {
+        const n = datos.length;
+        const yMedia = datos.reduce((sum, p) => sum + p.distancia, 0) / n;
+        let ssTotal = 0, ssRes = 0;
 
-export function parseFraction(input: string): number {
-    const trimmed = input.trim();
-    if (trimmed.includes("/")) {
-        const [numerator, denominator] = trimmed.split("/").map(Number);
-        if (!isNaN(numerator) && !isNaN(denominator) && denominator !== 0) {
-            return numerator / denominator;
-        }
-        return NaN;
-    }
-    return Number(trimmed);
-}
+        datos.forEach(punto => {
+            const yPred = prediccionFn(punto.velocidad);
+            ssTotal += Math.pow(punto.distancia - yMedia, 2);
+            ssRes += Math.pow(punto.distancia - yPred, 2);
+        });
 
+        return 1 - (ssRes / ssTotal);
+    },
 
-// Convierte array JS a matriz mathjs
-export const toMatrix = (arr: number[][]) => matrix(arr);
+    resolverSistema3x3: (matrix) => {
+        const m = matrix.map(row => [...row]);
 
-// ✅ Multiplicación de matrices
-export const multiplyMatrices = (A: number[][], B: number[][]) =>
-    multiply(matrix(A), matrix(B)).toArray() as number[][];
-
-// ✅ Inversa de matriz
-export const inverseMatrix = (A: number[][]) => inv(matrix(A)).toArray() as number[][];
-
-// ✅ Suma de matrices
-export const addMatrices = (A: number[][], B: number[][]) =>
-    add(matrix(A), matrix(B)).toArray() as number[][];
-
-// ✅ Resta de matrices
-export const subtractMatrices = (A: number[][], B: number[][]) =>
-    subtract(matrix(A), matrix(B)).toArray() as number[][];
-
-// ✅ Verificar si es diagonalmente dominante
-export const isDiagonallyDominant = (A: number[][]): boolean => {
-    for (let i = 0; i < A.length; i++) {
-        const diag = abs(A[i][i]);
-        const rowSum = A[i].reduce((sum, val, j) => sum + (j !== i ? abs(val) : 0), 0);
-        if (diag <= rowSum) return false;
-    }
-    return true;
-};
-
-// ✅ Matriz triangular inferior (diagonal nula)
-export const lowerTriangularZeroDiagonal = (A: number[][]): number[][] => {
-    const n = A.length;
-    const L = Array.from({ length: n }, () => Array(n).fill(0));
-    for (let i = 0; i < n; i++) {
-        for (let j = 0; j < i; j++) {
-            L[i][j] = A[i][j];
-        }
-    }
-    return L;
-};
-
-// ✅ Premultiplicar (M * A)
-export const premultiply = (M: number[][], A: number[][]): number[][] =>
-    multiply(matrix(M), matrix(A)).toArray() as number[][];
-
-// ✅ Método de Gauss-Seidel
-export const gaussSeidel = (
-    A: number[][],
-    b: number[],
-    tol = 1e-6,
-    errorType: "absolute" | "relative" = "absolute",
-    maxIter = 100,
-    x0?: number[]
-): { solution: number[]; steps: number[][]; iterations: number } => {
-    const n = A.length;
-    if (b.length !== n) {
-        throw new Error("Dimensiones incompatibles entre A y b");
-    }
-
-    // Inicialización de x
-    let x = x0 ? [...x0] : Array(n).fill(0);
-    const steps: number[][] = [];
-
-    for (let iter = 0; iter < maxIter; iter++) {
-        const xNew = [...x];
-
-        for (let i = 0; i < n; i++) {
-            if (A[i][i] === 0) {
-                throw new Error(`El elemento diagonal A[${i}][${i}] no puede ser 0`);
-            }
-
-            let sum = 0;
-            for (let j = 0; j < n; j++) {
-                if (j !== i) {
-                    sum += A[i][j] * (j < i ? xNew[j] : x[j]);
+        for (let i = 0; i < 3; i++) {
+            let maxRow = i;
+            for (let k = i + 1; k < 3; k++) {
+                if (Math.abs(m[k][i]) > Math.abs(m[maxRow][i])) {
+                    maxRow = k;
                 }
             }
-            xNew[i] = (b[i] - sum) / A[i][i];
+            [m[i], m[maxRow]] = [m[maxRow], m[i]];
+
+            if (Math.abs(m[i][i]) < 1e-10) return null;
+
+            for (let k = i + 1; k < 3; k++) {
+                const factor = m[k][i] / m[i][i];
+                for (let j = i; j < 4; j++) {
+                    m[k][j] -= factor * m[i][j];
+                }
+            }
         }
 
-        steps.push([...xNew]);
-
-        // Calcular error
-        let error: number;
-        if (errorType === "absolute") {
-            error = Math.max(...xNew.map((xi, k) => Math.abs(xi - x[k])));
-        } else {
-            error = Math.max(...xNew.map((xi, k) =>
-                Math.abs(xi - x[k]) / Math.max(1, Math.abs(xi))
-            ));
+        const solution = new Array(3);
+        for (let i = 2; i >= 0; i--) {
+            solution[i] = m[i][3];
+            for (let j = i + 1; j < 3; j++) {
+                solution[i] -= m[i][j] * solution[j];
+            }
+            solution[i] /= m[i][i];
         }
 
-        if (error < tol) {
-            return { solution: xNew, steps, iterations: iter + 1 };
-        }
+        return solution;
+    },
 
-        x = xNew;
+    calcularRegresionLineal: (datos) => {
+        const n = datos.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+        datos.forEach(p => {
+            sumX += p.velocidad;
+            sumY += p.distancia;
+            sumXY += p.velocidad * p.distancia;
+            sumX2 += p.velocidad * p.velocidad;
+        });
+
+        const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        const b = (sumY - m * sumX) / n;
+        const r2 = regressionUtils.calcularR2(datos, x => m * x + b);
+
+        return { r2, ecuacion: `y = ${m.toFixed(4)}x + ${b.toFixed(4)}`, params: { m, b } };
+    },
+
+    calcularRegresionCuadratica: (datos) => {
+        const n = datos.length;
+        if (n < 3) return null;
+
+        let sumX = 0, sumY = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0;
+        let sumXY = 0, sumX2Y = 0;
+
+        datos.forEach(p => {
+            const x = p.velocidad;
+            const y = p.distancia;
+            sumX += x;
+            sumY += y;
+            sumX2 += x * x;
+            sumX3 += x * x * x;
+            sumX4 += x * x * x * x;
+            sumXY += x * y;
+            sumX2Y += x * x * y;
+        });
+
+        const matrix = [
+            [n, sumX, sumX2, sumY],
+            [sumX, sumX2, sumX3, sumXY],
+            [sumX2, sumX3, sumX4, sumX2Y]
+        ];
+
+        const solution = regressionUtils.resolverSistema3x3(matrix);
+        if (!solution) return null;
+
+        const [c, b, a] = solution;
+        const r2 = regressionUtils.calcularR2(datos, x => a * x * x + b * x + c);
+
+        return { r2, ecuacion: `y = ${a.toFixed(4)}x² + ${b.toFixed(4)}x + ${c.toFixed(4)}`, params: { a, b, c } };
+    },
+
+    calcularRegresionExponencial: (datos) => {
+        const datosTransformados = datos.filter(p => p.distancia > 0).map(p => ({
+            x: p.velocidad,
+            y: Math.log(p.distancia)
+        }));
+
+        if (datosTransformados.length < 2) return null;
+
+        const n = datosTransformados.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+        datosTransformados.forEach(p => {
+            sumX += p.x;
+            sumY += p.y;
+            sumXY += p.x * p.y;
+            sumX2 += p.x * p.x;
+        });
+
+        const b = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        const lnA = (sumY - b * sumX) / n;
+        const a = Math.exp(lnA);
+        const r2 = regressionUtils.calcularR2(datos, x => a * Math.exp(b * x));
+
+        return { r2, ecuacion: `y = ${a.toFixed(4)} * e^(${b.toFixed(4)}x)`, params: { a, b } };
+    },
+
+    calcularRegresionPotencial: (datos) => {
+        const datosTransformados = datos.filter(p => p.velocidad > 0 && p.distancia > 0).map(p => ({
+            x: Math.log(p.velocidad),
+            y: Math.log(p.distancia)
+        }));
+
+        if (datosTransformados.length < 2) return null;
+
+        const n = datosTransformados.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+
+        datosTransformados.forEach(p => {
+            sumX += p.x;
+            sumY += p.y;
+            sumXY += p.x * p.y;
+            sumX2 += p.x * p.x;
+        });
+
+        const b = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        const lnA = (sumY - b * sumX) / n;
+        const a = Math.exp(lnA);
+        const r2 = regressionUtils.calcularR2(datos, x => a * Math.pow(x, b));
+
+        return { r2, ecuacion: `y = ${a.toFixed(4)} * x^${b.toFixed(4)}`, params: { a, b } };
+    },
+
+    calcularTodasLasRegresiones: (datos) => {
+        if (datos.length === 0) return null;
+
+        return {
+            modelos: {
+                lineal: regressionUtils.calcularRegresionLineal(datos),
+                cuadratica: regressionUtils.calcularRegresionCuadratica(datos),
+                exponencial: regressionUtils.calcularRegresionExponencial(datos),
+                potencial: regressionUtils.calcularRegresionPotencial(datos)
+            }
+        };
     }
-
-    return { solution: x, steps, iterations: maxIter };
 };

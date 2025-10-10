@@ -1,5 +1,4 @@
 import { Route, Switch } from "wouter"
-import TeoriaScreen from "./screens/teoria"
 import { Navbar } from "./components/NavBar";
 import { ThemeProvider } from "@/components/theme-provider"
 import { Footer } from "./components/Footer";
@@ -15,7 +14,6 @@ export default function App() {
           <Navbar />
           <Switch>
             <Route path="/minimos-cuadrados" component={IndexScreen} />
-            <Route path="/gauss-seidel/teoria" component={TeoriaScreen} />
             <Route>404: No such page!</Route>
           </Switch>
           <Footer />
