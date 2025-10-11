@@ -116,6 +116,11 @@ const RegressionLinesChart = ({ regression, data, modeloSeleccionado, vistaGrafi
         return combinedData;
     };
 
+    const scatterData = data.map(d => ({
+        velocidad: d.velocidad,
+        distancia: d.distancia
+    }));
+
     return (
         <ResponsiveContainer width="100%" height={500}>
             <ComposedChart data={getCombinedChartData()} margin={{ top: 20, right: 30, bottom: 60, left: 60 }}>
@@ -123,7 +128,7 @@ const RegressionLinesChart = ({ regression, data, modeloSeleccionado, vistaGrafi
                 <XAxis
                     dataKey="velocidad"
                     type="number"
-                    label={{ value: 'Velocidad (km/h)', position: 'insideBottom', offset: -20 }}
+                    label={{ value: 'Velocidad (km/h)', position: 'insideBottom', offset: -5 }}
                 />
                 <YAxis
                     type="number"
@@ -131,6 +136,15 @@ const RegressionLinesChart = ({ regression, data, modeloSeleccionado, vistaGrafi
                 />
                 <Tooltip />
                 <Legend />
+
+                {vistaGrafica === 'ambos' && (
+                    <Scatter
+                        data={scatterData}
+                        fill={dataColor}
+                        name="Datos"
+                        dataKey="distancia"
+                    />
+                )}
 
                 {regression.modelos.lineal && (
                     <Line
@@ -176,10 +190,6 @@ const RegressionLinesChart = ({ regression, data, modeloSeleccionado, vistaGrafi
                         dot={false}
                     />
                 )}
-
-                {vistaGrafica === 'ambos' && (
-                    <Scatter data={data} fill={dataColor} name="Datos" />
-                )}
             </ComposedChart>
         </ResponsiveContainer>
     );
@@ -205,7 +215,7 @@ const ChartSection = ({ type, data, regression, modeloSeleccionado, vistaGrafica
                 />
             </div>
 
-            {(vistaGrafica === 'puntos' || vistaGrafica === 'ambos') && (
+            {vistaGrafica === 'puntos' && (
                 <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-700 mb-3">Datos Observados</h3>
                     <ScatterPlot data={data} color={config.color} label={`Datos ${config.label}`} />
@@ -215,7 +225,7 @@ const ChartSection = ({ type, data, regression, modeloSeleccionado, vistaGrafica
             {(vistaGrafica === 'funciones' || vistaGrafica === 'ambos') && (
                 <div>
                     <h3 className="text-lg font-semibold text-gray-700 mb-3">
-                        {vistaGrafica === 'ambos' ? 'Funciones de Regresión' : 'Todas las Funciones'}
+                        {vistaGrafica === 'ambos' ? 'Datos y Funciones de Regresión' : 'Todas las Funciones'}
                     </h3>
                     <RegressionLinesChart
                         regression={regression}
