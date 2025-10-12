@@ -13,6 +13,13 @@ export const regressionUtils = {
         return 1 - (ssRes / ssTotal);
     },
 
+    calcularR2Ajustado: (r2, n, p) => {
+        // R²ajust = 1 - [SSE/(n-p)] / [SST/(n-1)]
+        // Que es equivalente a: R²ajust = 1 - [(1-R²)(n-1)/(n-p)]
+        if (n <= p) return null;
+        return 1 - ((1 - r2) * (n - 1)) / (n - p);
+    },
+
     resolverSistema3x3: (matrix) => {
         const m = matrix.map(row => [...row]);
 
@@ -61,8 +68,14 @@ export const regressionUtils = {
         const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
         const b = (sumY - m * sumX) / n;
         const r2 = regressionUtils.calcularR2(datos, x => m * x + b);
+        const r2Ajustado = regressionUtils.calcularR2Ajustado(r2, n, 2); // p=2 (m, b)
 
-        return { r2, ecuacion: `y = ${m.toFixed(4)}x + ${b.toFixed(4)}`, params: { m, b } };
+        return {
+            r2,
+            r2Ajustado,
+            ecuacion: `y = ${m.toFixed(4)}x + ${b.toFixed(4)}`,
+            params: { m, b }
+        };
     },
 
     calcularRegresionCuadratica: (datos) => {
@@ -95,8 +108,14 @@ export const regressionUtils = {
 
         const [c, b, a] = solution;
         const r2 = regressionUtils.calcularR2(datos, x => a * x * x + b * x + c);
+        const r2Ajustado = regressionUtils.calcularR2Ajustado(r2, n, 3); // p=3 (a, b, c)
 
-        return { r2, ecuacion: `y = ${a.toFixed(4)}x² + ${b.toFixed(4)}x + ${c.toFixed(4)}`, params: { a, b, c } };
+        return {
+            r2,
+            r2Ajustado,
+            ecuacion: `y = ${a.toFixed(4)}x² + ${b.toFixed(4)}x + ${c.toFixed(4)}`,
+            params: { a, b, c }
+        };
     },
 
     calcularRegresionExponencial: (datos) => {
@@ -121,8 +140,14 @@ export const regressionUtils = {
         const lnA = (sumY - b * sumX) / n;
         const a = Math.exp(lnA);
         const r2 = regressionUtils.calcularR2(datos, x => a * Math.exp(b * x));
+        const r2Ajustado = regressionUtils.calcularR2Ajustado(r2, datos.length, 2); // p=2 (a, b)
 
-        return { r2, ecuacion: `y = ${a.toFixed(4)} * e^(${b.toFixed(4)}x)`, params: { a, b } };
+        return {
+            r2,
+            r2Ajustado,
+            ecuacion: `y = ${a.toFixed(4)} * e^(${b.toFixed(4)}x)`,
+            params: { a, b }
+        };
     },
 
     calcularRegresionPotencial: (datos) => {
@@ -147,8 +172,14 @@ export const regressionUtils = {
         const lnA = (sumY - b * sumX) / n;
         const a = Math.exp(lnA);
         const r2 = regressionUtils.calcularR2(datos, x => a * Math.pow(x, b));
+        const r2Ajustado = regressionUtils.calcularR2Ajustado(r2, datos.length, 2); // p=2 (a, b)
 
-        return { r2, ecuacion: `y = ${a.toFixed(4)} * x^${b.toFixed(4)}`, params: { a, b } };
+        return {
+            r2,
+            r2Ajustado,
+            ecuacion: `y = ${a.toFixed(4)} * x^${b.toFixed(4)}`,
+            params: { a, b }
+        };
     },
 
     calcularTodasLasRegresiones: (datos) => {

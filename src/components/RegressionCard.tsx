@@ -33,20 +33,35 @@ export const RegressionCard = ({ type, regression, modeloSeleccionado, onModeloC
                 </p>
             </div>
 
-            <div className="bg-white rounded-lg p-3 shadow-sm mb-3">
-                <p className="text-xs text-gray-600 mb-1">R²</p>
-                <p className={`text-2xl font-bold ${colors.highlight}`}>
-                    {(regression.modelos[modeloSeleccionado]?.r2 || 0).toFixed(6)}
-                </p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                    <p className="text-xs text-gray-600 mb-1">R²</p>
+                    <p className={`text-xl font-bold ${colors.highlight}`}>
+                        {(regression.modelos[modeloSeleccionado]?.r2 || 0).toFixed(6)}
+                    </p>
+                </div>
+
+                <div className="bg-white rounded-lg p-3 shadow-sm">
+                    <p className="text-xs text-gray-600 mb-1">R² ajustado</p>
+                    <p className={`text-xl font-bold ${colors.highlight}`}>
+                        {(regression.modelos[modeloSeleccionado]?.r2Ajustado || 0).toFixed(6)}
+                    </p>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg p-3 shadow-sm">
-                <p className="text-xs font-semibold text-gray-700 mb-2">Comparación R²:</p>
+                <p className="text-xs font-semibold text-gray-700 mb-2">Comparación de modelos:</p>
                 <div className="space-y-1 text-xs">
                     {Object.entries(regression.modelos).map(([tipo, datos]) => datos && (
-                        <div key={tipo} className={`flex justify-between ${tipo === modeloSeleccionado ? `font-bold ${colors.highlight}` : 'text-gray-600'}`}>
-                            <span className="capitalize">{tipo}:</span>
-                            <span>{datos.r2.toFixed(6)}</span>
+                        <div key={tipo} className={`${tipo === modeloSeleccionado ? `font-bold ${colors.highlight}` : 'text-gray-600'}`}>
+                            <div className="flex justify-between">
+                                <span className="capitalize">{tipo}:</span>
+                                <span>R² = {datos.r2.toFixed(6)}</span>
+                            </div>
+                            <div className="flex justify-between pl-4 text-gray-500">
+                                <span></span>
+                                <span>R²ₐⱼ = {datos.r2Ajustado?.toFixed(6) || 'N/A'}</span>
+                            </div>
                         </div>
                     ))}
                 </div>
