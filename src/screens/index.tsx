@@ -57,7 +57,7 @@ const ScatterPlot = ({ data, color, label }) => (
                 type="number"
                 name="Velocidad"
                 unit=" km/h"
-                label={{ value: 'Velocidad (km/h)', position: 'insideBottom', offset: -20 }}
+                label={{ value: 'Velocidad (km/h)', position: 'insideBottom', offset: -5 }}
             />
             <YAxis
                 dataKey="distancia"

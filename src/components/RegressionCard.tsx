@@ -1,3 +1,144 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Info } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import katex from 'katex';
+
+const LatexFormula = ({ formula }) => {
+    const ref = useRef(null);
+
+    useEffect(() => {
+        if (ref.current) {
+            try {
+                katex.render(formula, ref.current, {
+                    throwOnError: false,
+                    displayMode: true
+                });
+            } catch (error) {
+                console.error('Error rendering KaTeX:', error);
+            }
+        }
+    }, [formula]);
+
+    return <div ref={ref} className="overflow-x-auto" />;
+};
+
+const FormulaModal = ({ tipo }) => {
+    const formulas = {
+        lineal: {
+            title: "Regresión Lineal",
+            modelo: "y = mx + b",
+            calculos: [
+                { label: "Pendiente (m)", formula: "m = \\frac{n\\sum xy - \\sum x \\sum y}{n\\sum x^2 - (\\sum x)^2}" },
+                { label: "Intercepto (b)", formula: "b = \\frac{\\sum y - m\\sum x}{n}" },
+                { label: "R²", formula: "R^2 = 1 - \\frac{\\text{SSE}}{\\text{SST}} = 1 - \\frac{\\sum(y_i - \\hat{y}_i)^2}{\\sum(y_i - \\bar{y})^2}" },
+                { label: "R² ajustado", formula: "R^2_{\\text{adj}} = 1 - \\frac{\\text{SSE}/(n-p)}{\\text{SST}/(n-1)}" },
+            ],
+            params: "donde p = 2 (número de parámetros: m, b)"
+        },
+        cuadratica: {
+            title: "Regresión Cuadrática",
+            modelo: "y = ax^2 + bx + c",
+            calculos: [
+                { label: "Sistema de ecuaciones normales", formula: "\\begin{bmatrix} n & \\sum x & \\sum x^2 \\\\ \\sum x & \\sum x^2 & \\sum x^3 \\\\ \\sum x^2 & \\sum x^3 & \\sum x^4 \\end{bmatrix} \\begin{bmatrix} c \\\\ b \\\\ a \\end{bmatrix} = \\begin{bmatrix} \\sum y \\\\ \\sum xy \\\\ \\sum x^2y \\end{bmatrix}" },
+                { label: "R²", formula: "R^2 = 1 - \\frac{\\sum(y_i - \\hat{y}_i)^2}{\\sum(y_i - \\bar{y})^2}" },
+                { label: "R² ajustado", formula: "R^2_{\\text{adj}} = 1 - \\frac{\\text{SSE}/(n-p)}{\\text{SST}/(n-1)}" },
+            ],
+            params: "donde p = 3 (número de parámetros: a, b, c)"
+        },
+        exponencial: {
+            title: "Regresión Exponencial",
+            modelo: "y = ae^{bx}",
+            calculos: [
+                { label: "Transformación logarítmica", formula: "\\ln(y) = \\ln(a) + bx" },
+                { label: "Regresión lineal en", formula: "Y = \\ln(y), \\quad X = x" },
+                { label: "Parámetro b", formula: "b = \\frac{n\\sum xY - \\sum x \\sum Y}{n\\sum x^2 - (\\sum x)^2}" },
+                { label: "Parámetro a", formula: "a = e^{\\frac{\\sum Y - b\\sum x}{n}}" },
+                { label: "R²", formula: "R^2 = 1 - \\frac{\\sum(y_i - ae^{bx_i})^2}{\\sum(y_i - \\bar{y})^2}" },
+                { label: "R² ajustado", formula: "R^2_{\\text{adj}} = 1 - \\frac{\\text{SSE}/(n-p)}{\\text{SST}/(n-1)}" },
+            ],
+            params: "donde p = 2 (número de parámetros: a, b)"
+        },
+        potencial: {
+            title: "Regresión Potencial",
+            modelo: "y = ax^b",
+            calculos: [
+                { label: "Transformación logarítmica", formula: "\\ln(y) = \\ln(a) + b\\ln(x)" },
+                { label: "Regresión lineal en", formula: "Y = \\ln(y), \\quad X = \\ln(x)" },
+                { label: "Parámetro b", formula: "b = \\frac{n\\sum XY - \\sum X \\sum Y}{n\\sum X^2 - (\\sum X)^2}" },
+                { label: "Parámetro a", formula: "a = e^{\\frac{\\sum Y - b\\sum X}{n}}" },
+                { label: "R²", formula: "R^2 = 1 - \\frac{\\sum(y_i - ax_i^b)^2}{\\sum(y_i - \\bar{y})^2}" },
+                { label: "R² ajustado", formula: "R^2_{\\text{adj}} = 1 - \\frac{\\text{SSE}/(n-p)}{\\text{SST}/(n-1)}" },
+            ],
+            params: "donde p = 2 (número de parámetros: a, b)"
+        }
+    };
+
+    const formula = formulas[tipo];
+
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full">
+                    <Info className="w-4 h-4 mr-2" />
+                    Ver fórmulas
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{formula.title}</DialogTitle>
+                    <DialogDescription>Fórmulas y método de cálculo</DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 mt-4">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <p className="text-sm font-semibold text-gray-700 mb-2">Modelo:</p>
+                        <div className="text-center">
+                            <LatexFormula formula={formula.modelo} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <p className="text-sm font-semibold text-gray-700">Cálculos:</p>
+                        {formula.calculos.map((calc, idx) => (
+                            <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                <p className="text-xs font-semibold text-gray-600 mb-2">{calc.label}:</p>
+                                <div className="bg-white p-3 rounded border border-gray-300">
+                                    <LatexFormula formula={calc.formula} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {formula.params && (
+                        <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                            <p className="text-xs text-amber-900">{formula.params}</p>
+                        </div>
+                    )}
+
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 text-xs text-gray-600">
+                        <p className="font-semibold mb-1">Notación:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                            <li>n = número de datos</li>
+                            <li>SSE = suma de cuadrados de los errores</li>
+                            <li>SST = suma total de cuadrados</li>
+                            <li>ȳ = media de y</li>
+                            <li>ŷᵢ = valor predicho para yᵢ</li>
+                        </ul>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 export const RegressionCard = ({ type, regression, modeloSeleccionado, onModeloChange }) => {
     const isDry = type === 'dry';
     const colors = isDry
@@ -25,6 +166,10 @@ export const RegressionCard = ({ type, regression, modeloSeleccionado, onModeloC
                     <option value="exponencial">Exponencial</option>
                     <option value="potencial">Potencial</option>
                 </select>
+            </div>
+
+            <div className="mb-3">
+                <FormulaModal tipo={modeloSeleccionado} />
             </div>
 
             <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
