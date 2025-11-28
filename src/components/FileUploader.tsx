@@ -68,7 +68,7 @@ export const FileUploader = ({ onDataLoaded }) => {
     const handleUseSampleData = async () => {
         setLoading(true);
         try {
-            const response = await fetch('./minimos-cuadrados/src/assets/Ejercicio 4.csv');
+            const response = await fetch('./assets/Ejercicio 4.csv');
             const csvText = await response.text();
 
             Papa.parse(csvText, {
@@ -92,7 +92,7 @@ export const FileUploader = ({ onDataLoaded }) => {
 
     const handleDownloadSample = async () => {
         try {
-            const response = await fetch('./minimos-cuadrados/src/assets/Ejercicio 4.csv');
+            const response = await fetch('./assets/Ejercicio 4.csv');
             const blob = await response.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
